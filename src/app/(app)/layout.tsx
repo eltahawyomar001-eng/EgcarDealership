@@ -4,10 +4,15 @@ import React from "react";
 import { DesktopSidebar } from "@/components/navigation/desktop-sidebar";
 import { BottomNav } from "@/components/navigation/bottom-nav";
 import { TopBar } from "@/components/navigation/top-bar";
+import { OfflineBanner } from "@/components/pwa/offline-banner";
+import { InstallPrompt } from "@/components/pwa/install-prompt";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-screen">
+      {/* Offline indicator */}
+      <OfflineBanner />
+
       {/* Desktop: Sidebar */}
       <DesktopSidebar />
 
@@ -21,6 +26,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
       {/* Mobile: Bottom Navigation */}
       <BottomNav />
+
+      {/* PWA Install Prompt */}
+      <InstallPrompt />
     </div>
   );
 }

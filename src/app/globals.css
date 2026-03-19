@@ -103,3 +103,91 @@ html {
   background: rgba(14, 165, 233, 0.2);
   color: inherit;
 }
+
+/* ─── Skeleton shimmer animation ─── */
+.skeleton-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+.skeleton-shimmer::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.15) 50%,
+    transparent 100%
+  );
+  animation: shimmer 1.8s infinite ease-in-out;
+}
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  .skeleton-shimmer::after {
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.05) 50%,
+      transparent 100%
+    );
+  }
+}
+
+/* ─── PWA slide-up animation ─── */
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-slide-up {
+  animation: slide-up 0.3s ease-out;
+}
+
+/* ─── ID Scanner scanning line ─── */
+@keyframes scan-line {
+  0%,
+  100% {
+    top: 10%;
+  }
+  50% {
+    top: 85%;
+  }
+}
+.animate-scan-line {
+  animation: scan-line 2s ease-in-out infinite;
+  position: absolute;
+}
+
+/* ─── iOS Safe Area insets ─── */
+.safe-area-inset {
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  padding-left: env(safe-area-inset-left, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
+}
+
+/* ─── Standalone PWA mode overrides ─── */
+@media (display-mode: standalone) {
+  body {
+    /* Prevent pull-to-refresh in standalone on pages we handle ourselves */
+    overscroll-behavior-y: contain;
+  }
+
+  /* Extra bottom padding for iPhone home indicator */
+  .safe-area-pb {
+    padding-bottom: max(env(safe-area-inset-bottom, 0px), 20px);
+  }
+}

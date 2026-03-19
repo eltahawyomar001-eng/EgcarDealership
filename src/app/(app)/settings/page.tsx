@@ -8,12 +8,23 @@ import { GlassCard } from "@/components/ui/glass-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/toast";
+import { usePWAContext } from "@/components/providers/pwa-provider";
+import {
+  hasPlatformAuthenticator,
+  enrollBiometric,
+  removeBiometric,
+  isEnrolled,
+} from "@/lib/pwa/biometric";
 import { localeDirection, localeNames, type Locale } from "@/lib/i18n/config";
 import {
   Settings as SettingsIcon,
   Globe,
   Building2,
   Loader2,
+  Wifi,
+  Fingerprint,
+  Shield,
+  CheckCircle,
 } from "lucide-react";
 
 export default function SettingsPage() {
@@ -21,8 +32,12 @@ export default function SettingsPage() {
   const { tenant } = useAuth();
   const supabase = createClient();
   const { toast } = useToast();
+  const { dataSaverEnabled, toggleDataSaver } = usePWAContext();
   const [currentLang, setCurrentLang] = useState(i18n.language);
   const [saving, setSaving] = useState(false);
+  const [biometricAvailable, setBiometricAvailable] = useState(false);
+  const [biometricEnabled, setBiometricEnabled] = useState(false);
+  const [biometricLoading, setBiometricLoading] = useState(false);
 
   // Controlled form state
   const [dealershipName, setDealershipName] = useState("");
@@ -38,6 +53,11 @@ export default function SettingsPage() {
   }, [tenant]);
 
   useEffect(() => {
+    hasPlatformAuthenticator().then(setBiometricAvailable);
+    setBiometricEnabled(isEnrolled());
+  }, []);
+
+  useEffect(() => {
     document.documentElement.dir =
       localeDirection[currentLang as Locale] || "ltr";
     document.documentElement.lang = currentLang;
@@ -50,6 +70,30 @@ export default function SettingsPage() {
     },
     [i18n],
   );
+
+  const handleBiometricToggle = async () => {
+    setBiometricLoading(true);
+    try {
+      if (biometricEnabled) {
+        removeBiometric();
+        setBiometricEnabled(false);
+        toast(t("app.success"), "success");
+      } else {
+        const userId = tenant?.id || "user";
+        const success = await enrollBiometric(userId, t("app.name"));
+        if (success) {
+          setBiometricEnabled(true);
+          toast(t("app.success"), "success");
+        } else {
+          toast(t("app.error"), "error");
+        }
+      }
+    } catch {
+      toast(t("app.error"), "error");
+    } finally {
+      setBiometricLoading(false);
+    }
+  };
 
   const handleSave = async () => {
     if (!tenant) return;
@@ -142,6 +186,85 @@ export default function SettingsPage() {
           </Button>
         </div>
       </GlassCard>
+
+      {/* Data Saver Mode */}
+      <GlassCard variant="elevated">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-amber-500/15">
+              <Wifi className="h-5 w-5 text-amber-500" />
+            </div>
+            <div>
+              <h2 className="font-bold">{t("pwa.dataSaverMode")}</h2>
+              <p className="text-sm text-gray-500">
+                {t("pwa.dataSaverDescription")}
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={toggleDataSaver}
+            className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors ${
+              dataSaverEnabled ? "bg-sky-500" : "bg-gray-300 dark:bg-white/15"
+            }`}
+          >
+            <span
+              className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-md transition-transform ${
+                dataSaverEnabled ? "translate-x-6" : "translate-x-1"
+              }`}
+            />
+          </button>
+        </div>
+      </GlassCard>
+
+      {/* Biometric Lock */}
+      {biometricAvailable && (
+        <GlassCard variant="elevated">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="p-2.5 rounded-xl bg-violet-500/15">
+              <Fingerprint className="h-5 w-5 text-violet-500" />
+            </div>
+            <div>
+              <h2 className="font-bold">{t("pwa.biometricLock")}</h2>
+              <p className="text-sm text-gray-500">
+                {t("pwa.biometricDescription")}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              {biometricEnabled ? (
+                <>
+                  <CheckCircle className="h-4 w-4 text-emerald-500" />
+                  <span className="text-sm text-emerald-600 dark:text-emerald-400 font-medium">
+                    {t("pwa.biometricEnabled")}
+                  </span>
+                </>
+              ) : (
+                <>
+                  <Shield className="h-4 w-4 text-gray-400" />
+                  <span className="text-sm text-gray-500">
+                    {t("pwa.biometricDisabled")}
+                  </span>
+                </>
+              )}
+            </div>
+            <Button
+              variant={biometricEnabled ? "ghost" : "primary"}
+              size="sm"
+              onClick={handleBiometricToggle}
+              disabled={biometricLoading}
+            >
+              {biometricLoading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : biometricEnabled ? (
+                t("pwa.disableBiometric")
+              ) : (
+                t("pwa.enableBiometric")
+              )}
+            </Button>
+          </div>
+        </GlassCard>
+      )}
     </div>
   );
 }

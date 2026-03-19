@@ -4,13 +4,16 @@ import React from "react";
 import { I18nextProvider } from "react-i18next";
 import i18n from "@/lib/i18n";
 import { AuthProvider } from "./auth-provider";
+import { PWAProvider } from "./pwa-provider";
 import { ToastProvider } from "@/components/ui/toast";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <I18nextProvider i18n={i18n}>
       <AuthProvider>
-        <ToastProvider>{children}</ToastProvider>
+        <ToastProvider>
+          <PWAProvider>{children}</PWAProvider>
+        </ToastProvider>
       </AuthProvider>
     </I18nextProvider>
   );
