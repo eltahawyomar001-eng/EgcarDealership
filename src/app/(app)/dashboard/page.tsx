@@ -18,6 +18,7 @@ import {
   CalendarCheck,
   ShieldCheck,
   Clock,
+  LayoutDashboard,
 } from "lucide-react";
 
 export default function DashboardPage() {
@@ -87,8 +88,9 @@ export default function DashboardPage() {
     <div className="space-y-6">
       {/* Page title */}
       <div>
-        <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
-          {t("dashboard.title")} 🎛️
+        <h1 className="text-2xl md:text-3xl font-bold tracking-tight flex items-center gap-2">
+          <LayoutDashboard className="h-7 w-7 text-sky-500" />
+          {t("dashboard.title")}
         </h1>
         <p className="text-gray-500 dark:text-gray-400 mt-1 text-sm">
           {new Date().toLocaleDateString("en-EG", {

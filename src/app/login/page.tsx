@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import { useAuth } from "@/components/providers/auth-provider";
 import { GlassCard } from "@/components/ui/glass-card";
 import { Button } from "@/components/ui/button";
-import { Car } from "lucide-react";
+import { Car, Shield } from "lucide-react";
 
 export default function LoginPage() {
   const { t } = useTranslation();
@@ -36,7 +36,7 @@ export default function LoginPage() {
           <Button
             variant="outline"
             size="lg"
-            className="w-full justify-center gap-3 border-gray-200 dark:border-white/10"
+            className="w-full justify-center gap-3 border-gray-200 dark:border-white/10 touch-target"
             onClick={signInWithGoogle}
           >
             <svg className="h-5 w-5" viewBox="0 0 24 24">
@@ -63,7 +63,7 @@ export default function LoginPage() {
           <Button
             variant="outline"
             size="lg"
-            className="w-full justify-center gap-3 border-gray-200 dark:border-white/10"
+            className="w-full justify-center gap-3 border-gray-200 dark:border-white/10 touch-target"
             onClick={signInWithApple}
           >
             <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
@@ -73,9 +73,15 @@ export default function LoginPage() {
           </Button>
         </div>
 
+        {/* Terms notice */}
+        <div className="flex items-center justify-center gap-2 mt-6">
+          <Shield className="h-3.5 w-3.5 text-gray-400" />
+          <p className="text-xs text-gray-400">{t("auth.termsNotice")}</p>
+        </div>
+
         {/* Footer */}
-        <p className="text-center text-xs text-gray-400 mt-6">
-          © {new Date().getFullYear()} CarOS Egypt. All rights reserved.
+        <p className="text-center text-xs text-gray-400 mt-4">
+          &copy; {new Date().getFullYear()} CarOS Egypt
         </p>
       </GlassCard>
     </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useReducer } from "react";
 import { useTranslation } from "react-i18next";
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/components/providers/auth-provider";
@@ -17,7 +17,26 @@ import {
   Navigation,
   AlertCircle,
   Shield,
+  ExternalLink,
 } from "lucide-react";
+
+/* ──────────────────── State Machine ──────────────────── */
+
+type GpsState =
+  | "IDLE"
+  | "REQUESTING_PERMISSION"
+  | "FETCHING_COORDINATES"
+  | "SYNCING_TO_DB"
+  | "SUCCESS"
+  | "ERROR";
+
+type GpsAction =
+  | { type: "REQUEST" }
+  | { type: "COORDINATES_RECEIVED"; payload: GpsPosition }
+  | { type: "SUBMIT" }
+  | { type: "SUBMITTED" }
+  | { type: "FAIL"; payload: string }
+  | { type: "RESET" };
 
 interface GpsPosition {
   latitude: number;
@@ -25,17 +44,59 @@ interface GpsPosition {
   accuracy: number;
 }
 
+interface GpsMachineState {
+  state: GpsState;
+  position: GpsPosition | null;
+  error: string | null;
+}
+
+function gpsReducer(
+  current: GpsMachineState,
+  action: GpsAction,
+): GpsMachineState {
+  switch (action.type) {
+    case "REQUEST":
+      return { state: "REQUESTING_PERMISSION", position: null, error: null };
+    case "COORDINATES_RECEIVED":
+      return {
+        state: "FETCHING_COORDINATES",
+        position: action.payload,
+        error: null,
+      };
+    case "SUBMIT":
+      return { ...current, state: "SYNCING_TO_DB" };
+    case "SUBMITTED":
+      return { ...current, state: "SUCCESS" };
+    case "FAIL":
+      return { state: "ERROR", position: null, error: action.payload };
+    case "RESET":
+      return { state: "IDLE", position: null, error: null };
+    default:
+      return current;
+  }
+}
+
+const initialGpsState: GpsMachineState = {
+  state: "IDLE",
+  position: null,
+  error: null,
+};
+
+/* ────────────── Google Maps URL helper ────────────── */
+
+function googleMapsUrl(lat: number, lng: number): string {
+  return `https://www.google.com/maps?q=${lat},${lng}`;
+}
+
+/* ──────────────────── Component ──────────────────── */
+
 export default function AttendancePage() {
   const { t, i18n } = useTranslation();
   const { user } = useAuth();
   const supabase = createClient();
 
-  const [gpsPosition, setGpsPosition] = useState<GpsPosition | null>(null);
-  const [gpsError, setGpsError] = useState<string | null>(null);
-  const [gpsLoading, setGpsLoading] = useState(false);
+  const [gps, dispatch] = useReducer(gpsReducer, initialGpsState);
   const [todayRecords, setTodayRecords] = useState<Attendance[]>([]);
-  const [submitting, setSubmitting] = useState(false);
-  const [success, setSuccess] = useState(false);
   const [lastAction, setLastAction] = useState<"clock_in" | "clock_out" | null>(
     null,
   );
@@ -62,38 +123,57 @@ export default function AttendancePage() {
   }, [supabase, user?.id]);
 
   useEffect(() => {
-    if (user?.id) fetchTodayRecords();
-  }, [user?.id, fetchTodayRecords]);
+    if (!user?.id) return;
+    let cancelled = false;
+    const load = async () => {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const { data } = await supabase
+        .from("attendance")
+        .select("*")
+        .eq("user_id", user.id)
+        .gte("timestamp", today.toISOString())
+        .order("timestamp", { ascending: false });
+      if (cancelled) return;
+      const records = (data as Attendance[]) || [];
+      setTodayRecords(records);
+      if (records.length > 0) setLastAction(records[0].event_type);
+      setLoading(false);
+    };
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id, supabase]);
 
-  // Request GPS
+  // Request GPS via state machine
   const requestGPS = () => {
-    setGpsLoading(true);
-    setGpsError(null);
+    dispatch({ type: "REQUEST" });
 
     if (!navigator.geolocation) {
-      setGpsError("Geolocation not supported by your browser");
-      setGpsLoading(false);
+      dispatch({ type: "FAIL", payload: t("attendance.locationUnavailable") });
       return;
     }
 
     navigator.geolocation.getCurrentPosition(
       (position) => {
-        setGpsPosition({
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude,
-          accuracy: position.coords.accuracy,
+        dispatch({
+          type: "COORDINATES_RECEIVED",
+          payload: {
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+            accuracy: position.coords.accuracy,
+          },
         });
-        setGpsLoading(false);
       },
       (error) => {
-        setGpsError(
+        const message =
           error.code === 1
-            ? "Location permission denied. Please enable GPS."
+            ? t("attendance.permissionDenied")
             : error.code === 2
-              ? "Location unavailable. Please try again."
-              : "Location request timed out. Please try again.",
-        );
-        setGpsLoading(false);
+              ? t("attendance.locationUnavailable")
+              : t("attendance.locationTimeout");
+        dispatch({ type: "FAIL", payload: message });
       },
       {
         enableHighAccuracy: true,
@@ -105,30 +185,27 @@ export default function AttendancePage() {
 
   // Submit attendance
   const submitAttendance = async (eventType: "clock_in" | "clock_out") => {
-    if (!gpsPosition || !user) return;
-    setSubmitting(true);
+    if (!gps.position || !user) return;
+    dispatch({ type: "SUBMIT" });
 
     try {
       await supabase.from("attendance").insert({
         user_id: user.id,
         event_type: eventType,
-        latitude: gpsPosition.latitude,
-        longitude: gpsPosition.longitude,
-        accuracy_meters: gpsPosition.accuracy,
+        latitude: gps.position.latitude,
+        longitude: gps.position.longitude,
+        accuracy_meters: gps.position.accuracy,
         device_info: navigator.userAgent.substring(0, 200),
       });
 
-      setSuccess(true);
+      dispatch({ type: "SUBMITTED" });
       setLastAction(eventType);
       setTimeout(() => {
-        setSuccess(false);
-        setGpsPosition(null);
+        dispatch({ type: "RESET" });
         fetchTodayRecords();
       }, 2000);
-    } catch (error) {
-      console.error("Attendance error:", error);
-    } finally {
-      setSubmitting(false);
+    } catch {
+      dispatch({ type: "FAIL", payload: t("app.error") });
     }
   };
 
@@ -167,98 +244,108 @@ export default function AttendancePage() {
             </div>
           </div>
 
-          {/* Step 1: Capture GPS */}
-          {!gpsPosition ? (
+          {/* State: IDLE or ERROR -- show capture button */}
+          {(gps.state === "IDLE" || gps.state === "ERROR") && (
             <div className="space-y-3">
               <Button
                 variant="primary"
                 size="lg"
-                className="w-full"
+                className="w-full touch-target"
                 onClick={requestGPS}
-                disabled={gpsLoading}
               >
-                {gpsLoading ? (
-                  <>
-                    <Loader2 className="h-5 w-5 me-2 animate-spin" />
-                    Detecting location...
-                  </>
-                ) : (
-                  <>
-                    <MapPin className="h-5 w-5 me-2" />
-                    📍 Capture Location
-                  </>
-                )}
+                <MapPin className="h-5 w-5 me-2" />
+                {t("attendance.captureLocation")}
               </Button>
-              {gpsError && (
+              {gps.error && (
                 <div className="flex items-center gap-2 p-3 rounded-xl bg-red-500/10 text-red-600 text-sm">
                   <AlertCircle className="h-4 w-4 shrink-0" />
-                  {gpsError}
+                  {gps.error}
                 </div>
               )}
             </div>
-          ) : (
+          )}
+
+          {/* State: REQUESTING_PERMISSION */}
+          {gps.state === "REQUESTING_PERMISSION" && (
+            <div className="flex items-center justify-center gap-3 py-6">
+              <Loader2 className="h-6 w-6 animate-spin text-sky-500" />
+              <span className="text-sm text-gray-500">
+                {t("attendance.detectingLocation")}
+              </span>
+            </div>
+          )}
+
+          {/* State: FETCHING_COORDINATES -- location captured, ready to submit */}
+          {gps.state === "FETCHING_COORDINATES" && gps.position && (
             <div className="space-y-3">
-              {/* Location captured */}
-              <div className="p-3 rounded-xl bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 text-sm flex items-center gap-2">
-                <CheckCircle2 className="h-4 w-4 shrink-0" />
-                <div>
-                  <p className="font-semibold">
-                    {t("attendance.locationCaptured")}
-                  </p>
-                  <p className="text-xs opacity-75">
-                    {t("attendance.accuracyMeters", {
-                      meters: gpsPosition.accuracy.toFixed(0),
-                    })}
-                  </p>
-                  <p className="text-xs opacity-60 font-mono mt-0.5">
-                    {gpsPosition.latitude.toFixed(6)},{" "}
-                    {gpsPosition.longitude.toFixed(6)}
-                  </p>
+              <div className="p-3 rounded-xl bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 text-sm">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="h-4 w-4 shrink-0" />
+                  <div className="flex-1">
+                    <p className="font-semibold">
+                      {t("attendance.locationCaptured")}
+                    </p>
+                    <p className="text-xs opacity-75">
+                      {t("attendance.accuracyMeters", {
+                        meters: gps.position.accuracy.toFixed(0),
+                      })}
+                    </p>
+                  </div>
+                  <a
+                    href={googleMapsUrl(
+                      gps.position.latitude,
+                      gps.position.longitude,
+                    )}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-xs font-medium underline underline-offset-2 opacity-75 hover:opacity-100 transition-opacity"
+                  >
+                    <ExternalLink className="h-3 w-3" />
+                    {t("attendance.viewOnMap")}
+                  </a>
                 </div>
               </div>
 
-              {/* Step 2: Submit */}
-              {success ? (
-                <div className="p-4 rounded-xl bg-emerald-500/15 text-emerald-600 text-center">
-                  <CheckCircle2 className="h-8 w-8 mx-auto mb-2" />
-                  <p className="font-bold">{t("app.success")} ✅</p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-2 gap-3">
-                  <Button
-                    variant="primary"
-                    size="lg"
-                    className="w-full"
-                    onClick={() => submitAttendance("clock_in")}
-                    disabled={!canClockIn || submitting}
-                  >
-                    {submitting ? (
-                      <Loader2 className="h-5 w-5 animate-spin" />
-                    ) : (
-                      <>
-                        <Clock className="h-5 w-5 me-1" />
-                        {t("attendance.clockIn")}
-                      </>
-                    )}
-                  </Button>
-                  <Button
-                    variant="danger"
-                    size="lg"
-                    className="w-full"
-                    onClick={() => submitAttendance("clock_out")}
-                    disabled={!canClockOut || submitting}
-                  >
-                    {submitting ? (
-                      <Loader2 className="h-5 w-5 animate-spin" />
-                    ) : (
-                      <>
-                        <Clock className="h-5 w-5 me-1" />
-                        {t("attendance.clockOut")}
-                      </>
-                    )}
-                  </Button>
-                </div>
-              )}
+              <div className="grid grid-cols-2 gap-3">
+                <Button
+                  variant="primary"
+                  size="lg"
+                  className="w-full touch-target"
+                  onClick={() => submitAttendance("clock_in")}
+                  disabled={!canClockIn}
+                >
+                  <Clock className="h-5 w-5 me-1" />
+                  {t("attendance.clockIn")}
+                </Button>
+                <Button
+                  variant="danger"
+                  size="lg"
+                  className="w-full touch-target"
+                  onClick={() => submitAttendance("clock_out")}
+                  disabled={!canClockOut}
+                >
+                  <Clock className="h-5 w-5 me-1" />
+                  {t("attendance.clockOut")}
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* State: SYNCING_TO_DB */}
+          {gps.state === "SYNCING_TO_DB" && (
+            <div className="flex items-center justify-center gap-3 py-6">
+              <Loader2 className="h-6 w-6 animate-spin text-sky-500" />
+              <span className="text-sm text-gray-500">{t("app.loading")}</span>
+            </div>
+          )}
+
+          {/* State: SUCCESS */}
+          {gps.state === "SUCCESS" && (
+            <div className="p-4 rounded-xl bg-emerald-500/15 text-emerald-600 text-center">
+              <CheckCircle2 className="h-8 w-8 mx-auto mb-2" />
+              <p className="font-bold">
+                {t("attendance.recordedSuccessfully")}
+              </p>
             </div>
           )}
         </GlassCard>
@@ -300,17 +387,26 @@ export default function AttendancePage() {
                     }
                     size="sm"
                   />
-                  <div className="flex-1">
+                  <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium">
                       {formatDateTime(record.timestamp, i18n.language)}
                     </p>
-                    <p className="text-xs text-gray-400 font-mono">
-                      📍 {record.latitude.toFixed(4)},{" "}
+                    <p className="text-xs text-gray-400 font-mono truncate">
+                      {record.latitude.toFixed(4)},{" "}
                       {record.longitude.toFixed(4)}
                       {record.accuracy_meters &&
                         ` (±${record.accuracy_meters.toFixed(0)}m)`}
                     </p>
                   </div>
+                  <a
+                    href={googleMapsUrl(record.latitude, record.longitude)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-2 rounded-lg hover:bg-white/20 dark:hover:bg-white/5 transition-colors shrink-0"
+                    title={t("attendance.viewOnMap")}
+                  >
+                    <ExternalLink className="h-4 w-4 text-sky-500" />
+                  </a>
                 </div>
               ))}
             </div>

@@ -32,7 +32,7 @@ export function Button({
   const sizes = {
     sm: "text-sm px-3 py-1.5 rounded-lg",
     md: "text-sm px-5 py-2.5 rounded-xl",
-    lg: "text-base px-7 py-3.5 rounded-xl",
+    lg: "text-base px-7 py-3.5 rounded-xl min-h-[48px]",
     icon: "p-2.5 rounded-xl",
   };
 

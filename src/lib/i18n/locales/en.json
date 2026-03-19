@@ -40,7 +40,29 @@
     "google": "Google",
     "apple": "Apple",
     "welcomeBack": "Welcome Back",
-    "loginSubtitle": "Sign in to manage your dealership"
+    "loginSubtitle": "Sign in to manage your dealership",
+    "termsNotice": "By signing in, you agree to our Terms of Service"
+  },
+  "landing": {
+    "heroTitle": "The Operating System for Egyptian Car Dealerships",
+    "heroSubtitle": "Complete oversight. Protected profits. Digital control from day one.",
+    "ctaStart": "Start Free",
+    "ctaDemo": "Watch Demo",
+    "featureOversight": "Total Oversight",
+    "featureOversightDesc": "Track every car, every sale, every payment. Nothing slips through the cracks.",
+    "featureProfit": "Profit Protection",
+    "featureProfitDesc": "Global price adjuster shields your margins against EGP volatility in seconds.",
+    "featureWorkforce": "Workforce Tracking",
+    "featureWorkforceDesc": "GPS-verified clock-in/out with live location mapping for full accountability.",
+    "featureInstallments": "Installment Control",
+    "featureInstallmentsDesc": "Visual payment tracker with overdue alerts and payment proof uploads.",
+    "statsTitle": "Built for the Egyptian Market",
+    "statDealerships": "Dealerships",
+    "statCarsTracked": "Cars Tracked",
+    "statCollected": "Collected",
+    "statUptime": "Uptime",
+    "socialProof": "Trusted by dealership owners across Egypt",
+    "footerTagline": "Digital control for the modern dealership"
   },
   "dashboard": {
     "title": "Command Center",
@@ -92,7 +114,11 @@
     "applySingle": "Apply to This Car",
     "carsAffected": "{{count}} cars will be affected",
     "confirmAdjust": "Confirm Price Adjustment",
-    "adjustWarning": "This will permanently change market prices. This action is logged."
+    "adjustWarning": "This will permanently change market prices. This action is logged.",
+    "previewChanges": "Preview Changes",
+    "before": "Before",
+    "after": "After",
+    "difference": "Difference"
   },
   "sales": {
     "title": "Sales",
@@ -113,7 +139,7 @@
     "cancelled": "Cancelled"
   },
   "installments": {
-    "title": "Installments (Daf'aat)",
+    "title": "Installments",
     "dueDate": "Due Date",
     "amountDue": "Amount Due",
     "amountPaid": "Amount Paid",
@@ -135,7 +161,9 @@
     "screenshotHint": "Upload payment proof (Vodafone Cash, InstaPay, etc.)",
     "paymentDate": "Payment Date",
     "noUpcoming": "No upcoming payments",
-    "schedule": "Payment Schedule"
+    "schedule": "Payment Schedule",
+    "overdueAmount": "Overdue Amount",
+    "collectedThisMonth": "Collected This Month"
   },
   "attendance": {
     "title": "Attendance",
@@ -144,10 +172,17 @@
     "gpsRequired": "GPS location is required to clock in",
     "locationCaptured": "Location captured",
     "accuracyMeters": "Accuracy: {{meters}}m",
-    "today": "Today",
+    "today": "Today's Log",
     "history": "History",
     "noRecords": "No attendance records for today",
-    "employeeLocations": "Employee Locations"
+    "employeeLocations": "Employee Locations",
+    "captureLocation": "Capture Location",
+    "detectingLocation": "Detecting location...",
+    "viewOnMap": "View on Map",
+    "recordedSuccessfully": "Recorded successfully",
+    "permissionDenied": "Location permission denied. Please enable GPS.",
+    "locationUnavailable": "Location unavailable. Please try again.",
+    "locationTimeout": "Location request timed out. Please try again."
   },
   "settings": {
     "title": "Settings",

@@ -3,6 +3,9 @@
 :root {
   --background: #f8fafc;
   --foreground: #0f172a;
+  --glass-bg: rgba(255, 255, 255, 0.6);
+  --glass-border: rgba(255, 255, 255, 0.2);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.06);
 }
 
 @theme inline {
@@ -10,12 +13,16 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-cairo: var(--font-cairo);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
     --background: #030712;
     --foreground: #f1f5f9;
+    --glass-bg: rgba(255, 255, 255, 0.04);
+    --glass-border: rgba(255, 255, 255, 0.08);
+    --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
   }
 }
 
@@ -31,6 +38,13 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Arabic RTL typography -- Cairo font */
+[dir="rtl"],
+[dir="rtl"] body {
+  font-family:
+    var(--font-cairo), var(--font-sans), "Segoe UI", Tahoma, sans-serif;
+}
+
 /* PWA safe areas for iOS */
 .safe-area-pb {
   padding-bottom: env(safe-area-inset-bottom, 0px);
@@ -40,10 +54,10 @@ body {
   padding-top: env(safe-area-inset-top, 0px);
 }
 
-/* Scrollbar styling */
+/* Premium scrollbar */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 
 ::-webkit-scrollbar-track {
@@ -51,19 +65,26 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.1);
+  background: rgba(0, 0, 0, 0.08);
   border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.15);
 }
 
 @media (prefers-color-scheme: dark) {
   ::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.08);
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.15);
   }
 }
 
 /* Touch-friendly tap highlight */
 * {
-  -webkit-tap-highlight-color: rgba(14, 165, 233, 0.1);
+  -webkit-tap-highlight-color: rgba(14, 165, 233, 0.08);
 }
 
 /* Prevent iOS bounce */
@@ -71,8 +92,14 @@ html {
   overscroll-behavior: none;
 }
 
-/* Smooth transitions for RTL/LTR switching */
-[dir="rtl"] {
-  font-family:
-    var(--font-sans), "Segoe UI", Tahoma, "Noto Sans Arabic", sans-serif;
+/* Minimum touch target for accessibility */
+.touch-target {
+  min-height: 48px;
+  min-width: 48px;
+}
+
+/* Selection colors */
+::selection {
+  background: rgba(14, 165, 233, 0.2);
+  color: inherit;
 }

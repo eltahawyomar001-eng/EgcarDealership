@@ -40,7 +40,29 @@
     "google": "جوجل",
     "apple": "آبل",
     "welcomeBack": "مرحباً بعودتك",
-    "loginSubtitle": "سجّل دخولك لإدارة معرضك"
+    "loginSubtitle": "سجّل دخولك لإدارة معرضك",
+    "termsNotice": "بتسجيل الدخول، أنت توافق على شروط الخدمة"
+  },
+  "landing": {
+    "heroTitle": "نظام التشغيل لمعارض السيارات في مصر",
+    "heroSubtitle": "الرقابة الشاملة. حماية الأرباح. تحكم رقمي من اليوم الأول.",
+    "ctaStart": "ابدأ مجاناً",
+    "ctaDemo": "شاهد العرض",
+    "featureOversight": "الرقابة الشاملة",
+    "featureOversightDesc": "تتبع كل سيارة، كل بيعة، كل دفعة. لا شيء يفلت من المتابعة.",
+    "featureProfit": "حماية الأرباح",
+    "featureProfitDesc": "معدّل الأسعار الشامل يحمي هوامشك ضد تقلبات الجنيه في ثوانٍ.",
+    "featureWorkforce": "تتبع القوى العاملة",
+    "featureWorkforceDesc": "تسجيل حضور وانصراف موثّق بالـ GPS مع خريطة مواقع حية للمحاسبية الكاملة.",
+    "featureInstallments": "التحكم بالأقساط",
+    "featureInstallmentsDesc": "متتبع دفعات مرئي مع تنبيهات التأخير ورفع إثباتات الدفع.",
+    "statsTitle": "مبني للسوق المصري",
+    "statDealerships": "معرض",
+    "statCarsTracked": "سيارة متتبعة",
+    "statCollected": "تم تحصيلها",
+    "statUptime": "وقت التشغيل",
+    "socialProof": "موثوق من أصحاب المعارض في جميع أنحاء مصر",
+    "footerTagline": "تحكم رقمي للمعرض العصري"
   },
   "dashboard": {
     "title": "مركز القيادة",
@@ -92,7 +114,11 @@
     "applySingle": "تطبيق على هذه السيارة",
     "carsAffected": "{{count}} سيارة ستتأثر",
     "confirmAdjust": "تأكيد تعديل الأسعار",
-    "adjustWarning": "سيتم تغيير أسعار السوق بشكل دائم. هذا الإجراء مسجل."
+    "adjustWarning": "سيتم تغيير أسعار السوق بشكل دائم. هذا الإجراء مسجل.",
+    "previewChanges": "معاينة التغييرات",
+    "before": "قبل",
+    "after": "بعد",
+    "difference": "الفرق"
   },
   "sales": {
     "title": "المبيعات",
@@ -113,7 +139,7 @@
     "cancelled": "ملغي"
   },
   "installments": {
-    "title": "الأقساط (دفعات)",
+    "title": "الأقساط",
     "dueDate": "تاريخ الاستحقاق",
     "amountDue": "المبلغ المستحق",
     "amountPaid": "المبلغ المدفوع",
@@ -135,7 +161,9 @@
     "screenshotHint": "ارفع إثبات الدفع (فودافون كاش، إنستاباي، إلخ)",
     "paymentDate": "تاريخ الدفع",
     "noUpcoming": "لا توجد مدفوعات قادمة",
-    "schedule": "جدول الدفعات"
+    "schedule": "جدول الدفعات",
+    "overdueAmount": "المبلغ المتأخر",
+    "collectedThisMonth": "المحصّل هذا الشهر"
   },
   "attendance": {
     "title": "الحضور",
@@ -144,10 +172,17 @@
     "gpsRequired": "الموقع الجغرافي مطلوب لتسجيل الحضور",
     "locationCaptured": "تم التقاط الموقع",
     "accuracyMeters": "الدقة: {{meters}} متر",
-    "today": "اليوم",
+    "today": "سجل اليوم",
     "history": "السجل",
     "noRecords": "لا توجد سجلات حضور لليوم",
-    "employeeLocations": "مواقع الموظفين"
+    "employeeLocations": "مواقع الموظفين",
+    "captureLocation": "التقاط الموقع",
+    "detectingLocation": "جاري تحديد الموقع...",
+    "viewOnMap": "عرض على الخريطة",
+    "recordedSuccessfully": "تم التسجيل بنجاح",
+    "permissionDenied": "تم رفض إذن الموقع. يرجى تفعيل الـ GPS.",
+    "locationUnavailable": "الموقع غير متاح. يرجى المحاولة مرة أخرى.",
+    "locationTimeout": "انتهت مهلة طلب الموقع. يرجى المحاولة مرة أخرى."
   },
   "settings": {
     "title": "الإعدادات",

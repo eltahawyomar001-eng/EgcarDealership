@@ -24,6 +24,7 @@ import {
   Check,
   Camera,
   Receipt,
+  X,
 } from "lucide-react";
 
 export default function InstallmentsPage() {
@@ -209,7 +210,7 @@ export default function InstallmentsPage() {
         </BentoItem>
         <BentoItem>
           <StatCard
-            title="Overdue Amount"
+            title={t("installments.overdueAmount")}
             value={formatEGP(stats.overdueAmount)}
             icon={DollarSign}
             color="red"
@@ -217,7 +218,7 @@ export default function InstallmentsPage() {
         </BentoItem>
         <BentoItem>
           <StatCard
-            title="Collected This Month"
+            title={t("installments.collectedThisMonth")}
             value={formatEGP(stats.paidThisMonth)}
             icon={Check}
             color="emerald"
@@ -433,7 +434,7 @@ export default function InstallmentsPage() {
                         onClick={() => setPaymentScreenshot(null)}
                         className="text-gray-400 hover:text-red-500"
                       >
-                        ✕
+                        <X className="h-4 w-4" />
                       </button>
                     </div>
                   ) : (

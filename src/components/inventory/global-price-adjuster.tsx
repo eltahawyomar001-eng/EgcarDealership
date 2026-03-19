@@ -289,7 +289,7 @@ export function GlobalPriceAdjuster({ carId, onComplete }: PriceAdjusterProps) {
           disabled={!adjustmentValue || parseFloat(adjustmentValue) <= 0}
         >
           <Calculator className="h-4 w-4 me-2" />
-          Preview Changes
+          {t("inventory.previewChanges")}
         </Button>
 
         {/* Preview Results */}
@@ -303,13 +303,13 @@ export function GlobalPriceAdjuster({ carId, onComplete }: PriceAdjusterProps) {
             </div>
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
-                <p className="text-gray-500">Before</p>
+                <p className="text-gray-500">{t("inventory.before")}</p>
                 <p className="font-bold text-lg">
                   {formatEGP(preview.totalBefore)}
                 </p>
               </div>
               <div>
-                <p className="text-gray-500">After</p>
+                <p className="text-gray-500">{t("inventory.after")}</p>
                 <p
                   className={`font-bold text-lg ${
                     preview.totalAfter > preview.totalBefore
@@ -322,7 +322,7 @@ export function GlobalPriceAdjuster({ carId, onComplete }: PriceAdjusterProps) {
               </div>
             </div>
             <div className="text-xs text-gray-500">
-              Difference:{" "}
+              {t("inventory.difference")}:{" "}
               {formatEGP(Math.abs(preview.totalAfter - preview.totalBefore))}
               {preview.totalAfter !== preview.totalBefore &&
                 ` (${preview.totalAfter > preview.totalBefore ? "+" : "-"}${(

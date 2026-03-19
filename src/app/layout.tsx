@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { Cairo } from "next/font/google";
 import { Providers } from "@/components/providers";
 import "./globals.css";
 
@@ -13,8 +14,15 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const cairo = Cairo({
+  variable: "--font-cairo",
+  subsets: ["arabic", "latin"],
+  weight: ["400", "500", "600", "700", "800", "900"],
+  display: "swap",
+});
+
 export const metadata: Metadata = {
-  title: "CarOS Egypt — Smart Dealership Management",
+  title: "CarOS Egypt -- Smart Dealership Management",
   description:
     "Multi-tenant SaaS platform for car dealership digitalization in Egypt. Manage inventory, installments, and workforce.",
   manifest: "/manifest.json",
@@ -44,7 +52,7 @@ export default function RootLayout({
   return (
     <html lang="en" dir="ltr" suppressHydrationWarning>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-white`}
+        className={`${geistSans.variable} ${geistMono.variable} ${cairo.variable} antialiased bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-white`}
       >
         <Providers>{children}</Providers>
       </body>
