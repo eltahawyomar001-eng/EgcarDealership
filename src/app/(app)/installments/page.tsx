@@ -27,10 +27,12 @@ import {
   X,
   MessageCircle,
 } from "lucide-react";
+import { useRole } from "@/hooks/use-role";
 
 export default function InstallmentsPage() {
   const { t, i18n } = useTranslation();
   const supabase = createClient();
+  const { canVerifyPayments } = useRole();
 
   const [installments, setInstallments] = useState<InstallmentSummary[]>([]);
   const [loading, setLoading] = useState(true);
@@ -347,17 +349,19 @@ export default function InstallmentsPage() {
                           <MessageCircle className="h-4 w-4" />
                         </a>
                       )}
-                      <Button
-                        size="sm"
-                        variant="primary"
-                        onClick={() => {
-                          setSelectedInstallment(inst);
-                          setPaymentAmount(String(remaining));
-                          setShowPaymentModal(true);
-                        }}
-                      >
-                        {t("installments.logPayment")}
-                      </Button>
+                      {canVerifyPayments && (
+                        <Button
+                          size="sm"
+                          variant="primary"
+                          onClick={() => {
+                            setSelectedInstallment(inst);
+                            setPaymentAmount(String(remaining));
+                            setShowPaymentModal(true);
+                          }}
+                        >
+                          {t("installments.logPayment")}
+                        </Button>
+                      )}
                     </div>
                   )}
                 </div>

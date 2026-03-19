@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
+import { useRole } from "@/hooks/use-role";
 import {
   LayoutDashboard,
   Car,
@@ -14,23 +15,48 @@ import {
 } from "lucide-react";
 
 const navItems = [
-  { href: "/dashboard", icon: LayoutDashboard, labelKey: "nav.dashboard" },
-  { href: "/inventory", icon: Car, labelKey: "nav.inventory" },
-  { href: "/sales", icon: Receipt, labelKey: "nav.sales" },
-  { href: "/installments", icon: CalendarCheck, labelKey: "nav.installments" },
-  { href: "/settings", icon: Settings, labelKey: "nav.settings" },
+  {
+    href: "/dashboard",
+    icon: LayoutDashboard,
+    labelKey: "nav.dashboard",
+    adminOnly: false,
+  },
+  {
+    href: "/inventory",
+    icon: Car,
+    labelKey: "nav.inventory",
+    adminOnly: false,
+  },
+  { href: "/sales", icon: Receipt, labelKey: "nav.sales", adminOnly: false },
+  {
+    href: "/installments",
+    icon: CalendarCheck,
+    labelKey: "nav.installments",
+    adminOnly: false,
+  },
+  {
+    href: "/settings",
+    icon: Settings,
+    labelKey: "nav.settings",
+    adminOnly: true,
+  },
 ];
 
 export function BottomNav() {
   const pathname = usePathname();
   const { t } = useTranslation();
+  const { canAccessSettings } = useRole();
+
+  const visibleItems = navItems.filter(
+    (item) => !item.adminOnly || canAccessSettings,
+  );
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden">
       {/* Glassmorphism bottom bar */}
       <div className="bg-white/80 dark:bg-gray-950/80 backdrop-blur-2xl border-t border-white/20 dark:border-white/5 safe-area-pb">
         <div className="flex items-center justify-around px-2 py-1">
-          {navItems.map((item) => {
+          {visibleItems.map((item) => {
             const isActive = pathname.startsWith(item.href);
             return (
               <Link

@@ -2,7 +2,7 @@
 // CarOS Egypt — TypeScript Database Types
 // ============================================================================
 
-export type UserRole = "admin" | "employee";
+export type UserRole = "admin" | "manager" | "employee";
 export type CarStatus = "available" | "reserved" | "sold";
 export type CarCondition = "new" | "used";
 export type SaleType = "cash" | "installment";

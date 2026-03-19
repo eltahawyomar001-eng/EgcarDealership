@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { createClient } from "@/lib/supabase/client";
 import { formatEGP } from "@/lib/utils";
+import { useRole } from "@/hooks/use-role";
 import { StatCard } from "@/components/ui/stat-card";
 import { GlassCard } from "@/components/ui/glass-card";
 import { StatusBadge } from "@/components/ui/status-badge";
@@ -26,6 +27,14 @@ import {
 export default function DashboardPage() {
   const { t, i18n } = useTranslation();
   const supabase = createClient();
+  const {
+    isManagerOrAdmin,
+    canViewProfit,
+    canViewValuation,
+    canViewAllAttendance,
+    canVerifyPayments,
+  } = useRole();
+
   const [valuation, setValuation] = useState<DealershipValuation | null>(null);
   const [upcomingPayments, setUpcomingPayments] = useState<
     InstallmentSummary[]
@@ -36,43 +45,44 @@ export default function DashboardPage() {
 
   const fetchDashboard = useCallback(async () => {
     try {
-      // Fetch valuation
       const { data: val } = await supabase
         .from("v_dealership_valuation")
         .select("*")
         .single();
       if (val) setValuation(val as DealershipValuation);
 
-      // Fetch upcoming installments (next 30 days)
-      const thirtyDaysFromNow = new Date();
-      thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
-      const { data: payments } = await supabase
-        .from("v_installment_summary")
-        .select("*")
-        .in("status", ["upcoming", "overdue"])
-        .lte("due_date", thirtyDaysFromNow.toISOString().split("T")[0])
-        .order("due_date", { ascending: true })
-        .limit(10);
-      if (payments) setUpcomingPayments(payments as InstallmentSummary[]);
+      if (canVerifyPayments) {
+        const thirtyDaysFromNow = new Date();
+        thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
+        const { data: payments } = await supabase
+          .from("v_installment_summary")
+          .select("*")
+          .in("status", ["upcoming", "overdue"])
+          .lte("due_date", thirtyDaysFromNow.toISOString().split("T")[0])
+          .order("due_date", { ascending: true })
+          .limit(10);
+        if (payments) setUpcomingPayments(payments as InstallmentSummary[]);
 
-      // Overdue count
-      const { count } = await supabase
-        .from("installments")
-        .select("*", { count: "exact", head: true })
-        .eq("status", "overdue");
-      setOverdueCount(count || 0);
+        const { count } = await supabase
+          .from("installments")
+          .select("*", { count: "exact", head: true })
+          .eq("status", "overdue");
+        setOverdueCount(count || 0);
+      }
 
-      // Today's attendance count
-      const { count: attendanceCount } = await supabase
-        .from("v_today_attendance")
-        .select("*", { count: "exact", head: true });
-      setTodayAttendance(attendanceCount || 0);
+      if (canViewAllAttendance) {
+        const { count: attendanceCount } = await supabase
+          .from("v_today_attendance")
+          .select("*", { count: "exact", head: true });
+        setTodayAttendance(attendanceCount || 0);
+      }
     } catch (error) {
       console.error("Dashboard fetch error:", error);
     } finally {
       setLoading(false);
     }
-  }, [supabase]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     fetchDashboard();
@@ -82,10 +92,71 @@ export default function DashboardPage() {
     return <DashboardSkeleton />;
   }
 
+  // ── EMPLOYEE VIEW: Simplified dashboard ──
+  if (!isManagerOrAdmin) {
+    return (
+      <PullToRefresh onRefresh={fetchDashboard}>
+        <div className="space-y-6">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold tracking-tight flex items-center gap-2">
+              <LayoutDashboard className="h-7 w-7 text-sky-500" />
+              {t("dashboard.title")}
+            </h1>
+            <p className="text-gray-500 dark:text-gray-400 mt-1 text-sm">
+              {new Date().toLocaleDateString(
+                i18n.language === "ar" ? "ar-EG" : "en-EG",
+                {
+                  weekday: "long",
+                  year: "numeric",
+                  month: "long",
+                  day: "numeric",
+                },
+              )}
+            </p>
+          </div>
+
+          <BentoGrid columns={3}>
+            <BentoItem>
+              <StatCard
+                title={t("dashboard.availableCars")}
+                value={valuation?.available_count ?? 0}
+                icon={Car}
+                color="sky"
+                subtitle={t("dashboard.totalInventory")}
+              />
+            </BentoItem>
+            <BentoItem>
+              <StatCard
+                title={t("dashboard.reservedCars")}
+                value={valuation?.reserved_count ?? 0}
+                icon={Clock}
+                color="amber"
+              />
+            </BentoItem>
+            <BentoItem>
+              <StatCard
+                title={t("dashboard.soldCars")}
+                value={valuation?.sold_count ?? 0}
+                icon={ShieldCheck}
+                color="emerald"
+              />
+            </BentoItem>
+          </BentoGrid>
+
+          <GlassCard variant="elevated">
+            <p className="text-sm text-gray-500 text-center py-4">
+              {t("rbac.employeeDashboardHint")}
+            </p>
+          </GlassCard>
+        </div>
+      </PullToRefresh>
+    );
+  }
+
+  // ── ADMIN/MANAGER VIEW: Full dashboard ──
   return (
     <PullToRefresh onRefresh={fetchDashboard}>
       <div className="space-y-6">
-        {/* Page title */}
         <div>
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight flex items-center gap-2">
             <LayoutDashboard className="h-7 w-7 text-sky-500" />
@@ -104,7 +175,6 @@ export default function DashboardPage() {
           </p>
         </div>
 
-        {/* Stat cards - Bento grid */}
         <BentoGrid columns={4}>
           <BentoItem>
             <StatCard
@@ -115,22 +185,26 @@ export default function DashboardPage() {
               subtitle={t("dashboard.totalInventory")}
             />
           </BentoItem>
-          <BentoItem>
-            <StatCard
-              title={t("dashboard.totalValue")}
-              value={formatEGP(valuation?.available_value ?? 0)}
-              icon={DollarSign}
-              color="emerald"
-            />
-          </BentoItem>
-          <BentoItem>
-            <StatCard
-              title={t("dashboard.potentialProfit")}
-              value={formatEGP(valuation?.potential_profit ?? 0)}
-              icon={TrendingUp}
-              color="violet"
-            />
-          </BentoItem>
+          {canViewValuation && (
+            <BentoItem>
+              <StatCard
+                title={t("dashboard.totalValue")}
+                value={formatEGP(valuation?.available_value ?? 0)}
+                icon={DollarSign}
+                color="emerald"
+              />
+            </BentoItem>
+          )}
+          {canViewProfit && (
+            <BentoItem>
+              <StatCard
+                title={t("dashboard.potentialProfit")}
+                value={formatEGP(valuation?.potential_profit ?? 0)}
+                icon={TrendingUp}
+                color="violet"
+              />
+            </BentoItem>
+          )}
           <BentoItem>
             <StatCard
               title={t("dashboard.overduePayments")}
@@ -141,9 +215,7 @@ export default function DashboardPage() {
           </BentoItem>
         </BentoGrid>
 
-        {/* Second row */}
         <BentoGrid columns={3}>
-          {/* Upcoming Payments */}
           <BentoItem span={2}>
             <GlassCard variant="elevated">
               <div className="flex items-center justify-between mb-4">
@@ -190,7 +262,6 @@ export default function DashboardPage() {
             </GlassCard>
           </BentoItem>
 
-          {/* Quick Stats */}
           <BentoItem>
             <div className="space-y-4">
               <GlassCard variant="elevated">
@@ -223,19 +294,21 @@ export default function DashboardPage() {
                   </div>
                 </div>
               </GlassCard>
-              <GlassCard variant="elevated">
-                <div className="flex items-center gap-3">
-                  <div className="p-2.5 rounded-xl bg-sky-500/15">
-                    <Users className="h-5 w-5 text-sky-500" />
+              {canViewAllAttendance && (
+                <GlassCard variant="elevated">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2.5 rounded-xl bg-sky-500/15">
+                      <Users className="h-5 w-5 text-sky-500" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500">
+                        {t("dashboard.todayAttendance")}
+                      </p>
+                      <p className="text-xl font-bold">{todayAttendance}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-sm text-gray-500">
-                      {t("dashboard.todayAttendance")}
-                    </p>
-                    <p className="text-xl font-bold">{todayAttendance}</p>
-                  </div>
-                </div>
-              </GlassCard>
+                </GlassCard>
+              )}
             </div>
           </BentoItem>
         </BentoGrid>

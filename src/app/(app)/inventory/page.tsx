@@ -21,11 +21,14 @@ import {
   X,
 } from "lucide-react";
 import Image from "next/image";
+import { useRole } from "@/hooks/use-role";
 
 export default function InventoryPage() {
   const { t } = useTranslation();
   const router = useRouter();
   const supabase = createClient();
+  const { canChangePrices, canViewPurchasePrice, canViewProfit, canAddCars } =
+    useRole();
   const [cars, setCars] = useState<Car[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<CarStatus | "all">("all");
@@ -69,22 +72,26 @@ export default function InventoryPage() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button
-            variant="outline"
-            onClick={() => setShowAdjuster(!showAdjuster)}
-          >
-            <SlidersHorizontal className="h-4 w-4 me-2" />
-            {t("inventory.priceAdjuster")}
-          </Button>
-          <Button variant="primary" onClick={() => setShowAddCar(true)}>
-            <Plus className="h-4 w-4 me-2" />
-            {t("inventory.addCar")}
-          </Button>
+          {canChangePrices && (
+            <Button
+              variant="outline"
+              onClick={() => setShowAdjuster(!showAdjuster)}
+            >
+              <SlidersHorizontal className="h-4 w-4 me-2" />
+              {t("inventory.priceAdjuster")}
+            </Button>
+          )}
+          {canAddCars && (
+            <Button variant="primary" onClick={() => setShowAddCar(true)}>
+              <Plus className="h-4 w-4 me-2" />
+              {t("inventory.addCar")}
+            </Button>
+          )}
         </div>
       </div>
 
       {/* Price Adjuster (toggle) */}
-      {showAdjuster && (
+      {canChangePrices && showAdjuster && (
         <div className="relative">
           <button
             onClick={() => setShowAdjuster(false)}
@@ -179,15 +186,22 @@ export default function InventoryPage() {
                     </div>
 
                     {/* Pricing */}
-                    <div className="grid grid-cols-2 gap-2 text-sm">
-                      <div>
-                        <p className="text-xs text-gray-400">
-                          {t("inventory.purchasePrice")}
-                        </p>
-                        <p className="font-semibold">
-                          {formatEGP(car.purchase_price)}
-                        </p>
-                      </div>
+                    <div
+                      className={cn(
+                        "grid gap-2 text-sm",
+                        canViewPurchasePrice ? "grid-cols-2" : "grid-cols-1",
+                      )}
+                    >
+                      {canViewPurchasePrice && (
+                        <div>
+                          <p className="text-xs text-gray-400">
+                            {t("inventory.purchasePrice")}
+                          </p>
+                          <p className="font-semibold">
+                            {formatEGP(car.purchase_price)}
+                          </p>
+                        </div>
+                      )}
                       <div>
                         <p className="text-xs text-gray-400">
                           {t("inventory.marketPrice")}
@@ -198,18 +212,20 @@ export default function InventoryPage() {
                       </div>
                     </div>
 
-                    {/* Profit indicator */}
-                    <div
-                      className={cn(
-                        "text-xs font-semibold px-2 py-1 rounded-lg text-center",
-                        profit >= 0
-                          ? "bg-emerald-500/10 text-emerald-600"
-                          : "bg-red-500/10 text-red-600",
-                      )}
-                    >
-                      {profit >= 0 ? "+" : ""}
-                      {formatEGP(profit)} ({profitPct}%)
-                    </div>
+                    {/* Profit indicator -- admin/manager only */}
+                    {canViewProfit && (
+                      <div
+                        className={cn(
+                          "text-xs font-semibold px-2 py-1 rounded-lg text-center",
+                          profit >= 0
+                            ? "bg-emerald-500/10 text-emerald-600"
+                            : "bg-red-500/10 text-red-600",
+                        )}
+                      >
+                        {profit >= 0 ? "+" : ""}
+                        {formatEGP(profit)} ({profitPct}%)
+                      </div>
+                    )}
                   </div>
                 </GlassCard>
               </BentoItem>

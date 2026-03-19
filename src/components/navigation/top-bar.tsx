@@ -3,12 +3,14 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/components/providers/auth-provider";
-import { Globe, Bell } from "lucide-react";
+import { useRole } from "@/hooks/use-role";
+import { Globe, Bell, Shield, ShieldCheck, User } from "lucide-react";
 import { localeDirection, type Locale } from "@/lib/i18n/config";
 
 export function TopBar() {
   const { t, i18n } = useTranslation();
   const { user, tenant } = useAuth();
+  const { role, isAdmin, isManager, roleLabel } = useRole();
 
   const toggleLocale = () => {
     const newLocale: Locale = i18n.language === "en" ? "ar" : "en";
@@ -16,6 +18,13 @@ export function TopBar() {
     document.documentElement.dir = localeDirection[newLocale];
     document.documentElement.lang = newLocale;
   };
+
+  const RoleIcon = isAdmin ? ShieldCheck : isManager ? Shield : User;
+  const roleBadgeColor = isAdmin
+    ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
+    : isManager
+      ? "bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/20"
+      : "bg-gray-500/10 text-gray-600 dark:text-gray-400 border-gray-500/20";
 
   return (
     <header className="sticky top-0 z-40 bg-white/60 dark:bg-gray-950/60 backdrop-blur-2xl border-b border-gray-200/50 dark:border-white/5">
@@ -39,6 +48,14 @@ export function TopBar() {
 
         {/* Actions */}
         <div className="flex items-center gap-2">
+          {/* Role badge */}
+          <div
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold border ${roleBadgeColor}`}
+          >
+            <RoleIcon className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">{t(roleLabel)}</span>
+          </div>
+
           {/* Language toggle */}
           <button
             onClick={toggleLocale}

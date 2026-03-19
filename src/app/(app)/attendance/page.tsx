@@ -18,7 +18,9 @@ import {
   AlertCircle,
   Shield,
   ExternalLink,
+  Users,
 } from "lucide-react";
+import { useRole } from "@/hooks/use-role";
 
 /* ──────────────────── State Machine ──────────────────── */
 
@@ -94,9 +96,13 @@ export default function AttendancePage() {
   const { t, i18n } = useTranslation();
   const { user } = useAuth();
   const supabase = createClient();
+  const { canViewAllAttendance } = useRole();
 
   const [gps, dispatch] = useReducer(gpsReducer, initialGpsState);
   const [todayRecords, setTodayRecords] = useState<Attendance[]>([]);
+  const [allStaffRecords, setAllStaffRecords] = useState<
+    (Attendance & { profile_name?: string })[]
+  >([]);
   const [lastAction, setLastAction] = useState<"clock_in" | "clock_out" | null>(
     null,
   );
@@ -141,10 +147,33 @@ export default function AttendancePage() {
       setLoading(false);
     };
     load();
+
+    // Admin/manager: also fetch all staff records
+    if (canViewAllAttendance) {
+      const loadAll = async () => {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const { data } = await supabase
+          .from("attendance")
+          .select("*, profile:profiles!attendance_user_id_fkey(full_name)")
+          .gte("timestamp", today.toISOString())
+          .order("timestamp", { ascending: false });
+        if (cancelled) return;
+        const records = (data || []).map((r: Record<string, unknown>) => ({
+          ...(r as unknown as Attendance),
+          profile_name:
+            (r.profile as { full_name?: string } | null)?.full_name ||
+            "Unknown",
+        }));
+        setAllStaffRecords(records);
+      };
+      loadAll();
+    }
+
     return () => {
       cancelled = true;
     };
-  }, [user?.id, supabase]);
+  }, [user?.id, supabase, canViewAllAttendance]);
 
   // Request GPS via state machine
   const requestGPS = () => {
@@ -414,6 +443,61 @@ export default function AttendancePage() {
           )}
         </GlassCard>
       </div>
+
+      {/* Admin/Manager: All Staff Records */}
+      {canViewAllAttendance && (
+        <GlassCard variant="elevated">
+          <h2 className="font-bold text-lg mb-4 flex items-center gap-2">
+            <Users className="h-5 w-5 text-sky-500" />
+            {t("attendance.allStaffToday")}
+          </h2>
+          {allStaffRecords.length === 0 ? (
+            <div className="text-center py-8">
+              <Users className="h-10 w-10 text-gray-300 mx-auto mb-2" />
+              <p className="text-gray-400 text-sm">
+                {t("attendance.noRecords")}
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {allStaffRecords.map((record) => (
+                <div
+                  key={record.id}
+                  className={cn(
+                    "flex items-center gap-3 p-3 rounded-xl",
+                    "bg-white/40 dark:bg-white/5 border border-white/20 dark:border-white/5",
+                  )}
+                >
+                  <StatusBadge
+                    status={record.event_type}
+                    label={
+                      record.event_type === "clock_in"
+                        ? t("attendance.clockIn")
+                        : t("attendance.clockOut")
+                    }
+                    size="sm"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium">{record.profile_name}</p>
+                    <p className="text-xs text-gray-400">
+                      {formatDateTime(record.timestamp, i18n.language)}
+                    </p>
+                  </div>
+                  <a
+                    href={googleMapsUrl(record.latitude, record.longitude)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-2 rounded-lg hover:bg-white/20 dark:hover:bg-white/5 transition-colors shrink-0"
+                    title={t("attendance.viewOnMap")}
+                  >
+                    <ExternalLink className="h-4 w-4 text-sky-500" />
+                  </a>
+                </div>
+              ))}
+            </div>
+          )}
+        </GlassCard>
+      )}
     </div>
   );
 }

@@ -11,10 +11,12 @@ import { BentoGrid, BentoItem } from "@/components/ui/bento-grid";
 import { NewSaleModal } from "@/components/sales/new-sale-modal";
 import type { Sale } from "@/lib/types";
 import { Receipt, Plus, TrendingUp, User, MessageCircle } from "lucide-react";
+import { useRole } from "@/hooks/use-role";
 
 export default function SalesPage() {
   const { t, i18n } = useTranslation();
   const supabase = createClient();
+  const { canViewProfit, canCreateSales } = useRole();
   const [sales, setSales] = useState<Sale[]>([]);
   const [loading, setLoading] = useState(true);
   const [showNewSale, setShowNewSale] = useState(false);
@@ -46,7 +48,11 @@ export default function SalesPage() {
             {sales.length} {t("sales.title").toLowerCase()}
           </p>
         </div>
-        <Button variant="primary" onClick={() => setShowNewSale(true)}>
+        <Button
+          variant="primary"
+          onClick={() => setShowNewSale(true)}
+          disabled={!canCreateSales}
+        >
           <Plus className="h-4 w-4 me-2" />
           {t("sales.newSale")}
         </Button>
@@ -127,20 +133,22 @@ export default function SalesPage() {
                         </div>
                       </>
                     )}
-                    <div>
-                      <p className="text-xs text-gray-400">
-                        {t("sales.profit")}
-                      </p>
-                      <p
-                        className={cn(
-                          "font-semibold flex items-center gap-1",
-                          profit >= 0 ? "text-emerald-600" : "text-red-600",
-                        )}
-                      >
-                        <TrendingUp className="h-3 w-3" />
-                        {formatEGP(profit)}
-                      </p>
-                    </div>
+                    {canViewProfit && (
+                      <div>
+                        <p className="text-xs text-gray-400">
+                          {t("sales.profit")}
+                        </p>
+                        <p
+                          className={cn(
+                            "font-semibold flex items-center gap-1",
+                            profit >= 0 ? "text-emerald-600" : "text-red-600",
+                          )}
+                        >
+                          <TrendingUp className="h-3 w-3" />
+                          {formatEGP(profit)}
+                        </p>
+                      </div>
+                    )}
                   </div>
 
                   <div className="mt-3 pt-3 border-t border-gray-200/50 dark:border-white/5 flex items-center justify-between">

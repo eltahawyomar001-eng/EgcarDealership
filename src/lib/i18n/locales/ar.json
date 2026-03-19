@@ -258,7 +258,8 @@
     "recordedSuccessfully": "تم التسجيل بنجاح",
     "permissionDenied": "تم رفض إذن الموقع. يرجى تفعيل الـ GPS.",
     "locationUnavailable": "الموقع غير متاح. يرجى المحاولة مرة أخرى.",
-    "locationTimeout": "انتهت مهلة طلب الموقع. يرجى المحاولة مرة أخرى."
+    "locationTimeout": "انتهت مهلة طلب الموقع. يرجى المحاولة مرة أخرى.",
+    "allStaffToday": "جميع الموظفين اليوم"
   },
   "settings": {
     "title": "الإعدادات",
@@ -270,6 +271,7 @@
     "addEmployee": "إضافة موظف",
     "role": "الدور",
     "admin": "مدير",
+    "manager": "مدير فرع",
     "employee": "موظف"
   },
   "pwa": {
@@ -304,5 +306,13 @@
     "pullToRefresh": "اسحب للتحديث",
     "releaseToRefresh": "أفلت للتحديث",
     "refreshing": "جاري التحديث..."
+  },
+  "rbac": {
+    "ownerAccount": "المالك",
+    "managerAccount": "مدير",
+    "staffAccount": "موظف",
+    "employeeDashboardHint": "تواصل مع مديرك للحصول على تقارير المبيعات والتقارير المالية التفصيلية.",
+    "accessDenied": "غير مسموح",
+    "settingsBlocked": "فقط المالكين والمديرين يمكنهم الوصول للإعدادات."
   }
 }

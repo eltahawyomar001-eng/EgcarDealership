@@ -8,7 +8,7 @@ export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
 
   if (!supabaseUrl || !supabaseAnonKey) {
-    return supabaseResponse;
+    return { response: supabaseResponse, role: null };
   }
 
   const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
@@ -28,8 +28,21 @@ export async function updateSession(request: NextRequest) {
     },
   });
 
-  // Refresh session
-  await supabase.auth.getUser();
+  // Refresh session and get user
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  return supabaseResponse;
+  // Fetch user role from profile
+  let role: string | null = null;
+  if (user) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .single();
+    role = profile?.role ?? null;
+  }
+
+  return { response: supabaseResponse, role };
 }

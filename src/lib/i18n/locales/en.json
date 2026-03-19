@@ -258,7 +258,8 @@
     "recordedSuccessfully": "Recorded successfully",
     "permissionDenied": "Location permission denied. Please enable GPS.",
     "locationUnavailable": "Location unavailable. Please try again.",
-    "locationTimeout": "Location request timed out. Please try again."
+    "locationTimeout": "Location request timed out. Please try again.",
+    "allStaffToday": "All Staff Today"
   },
   "settings": {
     "title": "Settings",
@@ -270,6 +271,7 @@
     "addEmployee": "Add Employee",
     "role": "Role",
     "admin": "Admin",
+    "manager": "Manager",
     "employee": "Employee"
   },
   "pwa": {
@@ -304,5 +306,13 @@
     "pullToRefresh": "Pull to refresh",
     "releaseToRefresh": "Release to refresh",
     "refreshing": "Refreshing..."
+  },
+  "rbac": {
+    "ownerAccount": "Owner",
+    "managerAccount": "Manager",
+    "staffAccount": "Staff",
+    "employeeDashboardHint": "Contact your manager for detailed sales and financial reports.",
+    "accessDenied": "Access Denied",
+    "settingsBlocked": "Only owners and managers can access settings."
   }
 }
