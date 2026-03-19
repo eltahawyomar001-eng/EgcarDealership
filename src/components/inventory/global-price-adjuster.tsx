@@ -156,6 +156,7 @@ export function GlobalPriceAdjuster({ carId, onComplete }: PriceAdjusterProps) {
 
       // Log adjustment
       await supabase.from("price_adjustments").insert({
+        tenant_id: user?.tenant_id,
         adjustment_type: adjustmentType,
         adjustment_value: direction === "decrease" ? -value : value,
         scope: carId ? "single" : scope,
@@ -251,7 +252,7 @@ export function GlobalPriceAdjuster({ carId, onComplete }: PriceAdjusterProps) {
         {!carId && (
           <div className="space-y-3">
             <Select
-              label="Scope"
+              label={t("auth.scope")}
               value={scope}
               onChange={(e) => setScope(e.target.value as AdjustmentScope)}
               options={[
@@ -345,7 +346,7 @@ export function GlobalPriceAdjuster({ carId, onComplete }: PriceAdjusterProps) {
             {success ? (
               <>
                 <Check className="h-4 w-4 me-2" />
-                Applied Successfully!
+                {t("app.success")}
               </>
             ) : loading ? (
               <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full" />

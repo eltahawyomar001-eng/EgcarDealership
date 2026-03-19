@@ -1,6 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import type { Profile, Tenant } from "@/lib/types";
 
@@ -10,6 +11,18 @@ interface AuthContextType {
   loading: boolean;
   signInWithGoogle: () => Promise<void>;
   signInWithApple: () => Promise<void>;
+  signInWithEmail: (
+    email: string,
+    password: string,
+  ) => Promise<{ error: string | null }>;
+  signUp: (params: {
+    email: string;
+    password: string;
+    fullName: string;
+    dealershipName: string;
+    dealershipNameAr?: string;
+    phone?: string;
+  }) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
 }
 
@@ -19,6 +32,8 @@ const AuthContext = createContext<AuthContextType>({
   loading: true,
   signInWithGoogle: async () => {},
   signInWithApple: async () => {},
+  signInWithEmail: async () => ({ error: null }),
+  signUp: async () => ({ error: null }),
   signOut: async () => {},
 });
 
@@ -27,6 +42,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [tenant, setTenant] = useState<Tenant | null>(null);
   const [loading, setLoading] = useState(true);
   const supabase = createClient();
+  const router = useRouter();
+
+  /** Fetch profile + tenant for a given auth user id */
+  const loadUserData = async (userId: string) => {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", userId)
+      .single();
+
+    if (profile) {
+      setUser(profile as Profile);
+      const { data: tenantData } = await supabase
+        .from("tenants")
+        .select("*")
+        .eq("id", profile.tenant_id)
+        .single();
+      if (tenantData) setTenant(tenantData as Tenant);
+    }
+  };
 
   useEffect(() => {
     const getSession = async () => {
@@ -35,22 +70,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           data: { user: authUser },
         } = await supabase.auth.getUser();
         if (authUser) {
-          // Fetch profile with tenant
-          const { data: profile } = await supabase
-            .from("profiles")
-            .select("*")
-            .eq("id", authUser.id)
-            .single();
-
-          if (profile) {
-            setUser(profile as Profile);
-            const { data: tenantData } = await supabase
-              .from("tenants")
-              .select("*")
-              .eq("id", profile.tenant_id)
-              .single();
-            if (tenantData) setTenant(tenantData as Tenant);
-          }
+          await loadUserData(authUser.id);
         }
       } catch (error) {
         console.error("Auth error:", error);
@@ -65,20 +85,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (_event, session) => {
       if (session?.user) {
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("*")
-          .eq("id", session.user.id)
-          .single();
-        if (profile) {
-          setUser(profile as Profile);
-          const { data: tenantData } = await supabase
-            .from("tenants")
-            .select("*")
-            .eq("id", profile.tenant_id)
-            .single();
-          if (tenantData) setTenant(tenantData as Tenant);
-        }
+        await loadUserData(session.user.id);
       } else {
         setUser(null);
         setTenant(null);
@@ -87,7 +94,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
 
     return () => subscription.unsubscribe();
-  }, [supabase]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const signInWithGoogle = async () => {
     await supabase.auth.signInWithOAuth({
@@ -103,10 +111,89 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
   };
 
+  const signInWithEmail = async (
+    email: string,
+    password: string,
+  ): Promise<{ error: string | null }> => {
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+    if (error) return { error: error.message };
+    router.push("/dashboard");
+    return { error: null };
+  };
+
+  const signUp = async (params: {
+    email: string;
+    password: string;
+    fullName: string;
+    dealershipName: string;
+    dealershipNameAr?: string;
+    phone?: string;
+  }): Promise<{ error: string | null }> => {
+    // 1. Create tenant first (RLS allows authenticated insert, but we need
+    //    the tenant_id before creating the user so the handle_new_user trigger
+    //    can link the profile. We use a two-step approach.)
+    // First, sign up the user with metadata
+    const slug = params.dealershipName
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/(^-|-$)/g, "");
+
+    const { data: authData, error: signUpError } = await supabase.auth.signUp({
+      email: params.email,
+      password: params.password,
+      options: {
+        data: {
+          full_name: params.fullName,
+          role: "admin",
+        },
+        emailRedirectTo: `${window.location.origin}/auth/callback`,
+      },
+    });
+
+    if (signUpError) return { error: signUpError.message };
+    if (!authData.user) return { error: "Signup failed" };
+
+    // 2. Create tenant (the user is now authenticated)
+    const { data: tenantData, error: tenantError } = await supabase
+      .from("tenants")
+      .insert({
+        name: params.dealershipName,
+        name_ar: params.dealershipNameAr || null,
+        slug: `${slug}-${Date.now().toString(36)}`,
+        phone: params.phone || null,
+      })
+      .select()
+      .single();
+
+    if (tenantError) return { error: tenantError.message };
+
+    // 3. Update the auto-created profile to link to this tenant and set as admin
+    const { error: profileError } = await supabase
+      .from("profiles")
+      .update({
+        tenant_id: tenantData.id,
+        role: "admin",
+        full_name: params.fullName,
+        phone: params.phone || null,
+      })
+      .eq("id", authData.user.id);
+
+    if (profileError) return { error: profileError.message };
+
+    // 4. Load user data
+    await loadUserData(authData.user.id);
+    router.push("/dashboard");
+    return { error: null };
+  };
+
   const signOut = async () => {
     await supabase.auth.signOut();
     setUser(null);
     setTenant(null);
+    router.push("/login");
   };
 
   return (
@@ -117,6 +204,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         loading,
         signInWithGoogle,
         signInWithApple,
+        signInWithEmail,
+        signUp,
         signOut,
       }}
     >

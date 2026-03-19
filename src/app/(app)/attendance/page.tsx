@@ -190,6 +190,7 @@ export default function AttendancePage() {
 
     try {
       await supabase.from("attendance").insert({
+        tenant_id: user.tenant_id,
         user_id: user.id,
         event_type: eventType,
         latitude: gps.position.latitude,
