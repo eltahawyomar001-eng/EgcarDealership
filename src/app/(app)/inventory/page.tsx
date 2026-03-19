@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { formatEGP, cn } from "@/lib/utils";
 import { GlassCard } from "@/components/ui/glass-card";
@@ -10,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input, Select } from "@/components/ui/input";
 import { BentoGrid, BentoItem } from "@/components/ui/bento-grid";
 import { GlobalPriceAdjuster } from "@/components/inventory/global-price-adjuster";
+import { AddCarModal } from "@/components/inventory/add-car-modal";
 import type { Car, CarStatus } from "@/lib/types";
 import {
   Car as CarIcon,
@@ -22,12 +24,14 @@ import Image from "next/image";
 
 export default function InventoryPage() {
   const { t } = useTranslation();
+  const router = useRouter();
   const supabase = createClient();
   const [cars, setCars] = useState<Car[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<CarStatus | "all">("all");
   const [search, setSearch] = useState("");
   const [showAdjuster, setShowAdjuster] = useState(false);
+  const [showAddCar, setShowAddCar] = useState(false);
 
   const fetchCars = async () => {
     setLoading(true);
@@ -72,7 +76,7 @@ export default function InventoryPage() {
             <SlidersHorizontal className="h-4 w-4 me-2" />
             {t("inventory.priceAdjuster")}
           </Button>
-          <Button variant="primary">
+          <Button variant="primary" onClick={() => setShowAddCar(true)}>
             <Plus className="h-4 w-4 me-2" />
             {t("inventory.addCar")}
           </Button>
@@ -135,7 +139,12 @@ export default function InventoryPage() {
 
             return (
               <BentoItem key={car.id}>
-                <GlassCard variant="interactive" padding="none">
+                <GlassCard
+                  variant="interactive"
+                  padding="none"
+                  className="cursor-pointer"
+                  onClick={() => router.push(`/inventory/${car.id}`)}
+                >
                   {/* Car image placeholder */}
                   <div className="aspect-video bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 rounded-t-2xl flex items-center justify-center relative">
                     {car.images?.[0] ? (
@@ -208,6 +217,13 @@ export default function InventoryPage() {
           })}
         </BentoGrid>
       )}
+
+      {/* Add Car Modal */}
+      <AddCarModal
+        open={showAddCar}
+        onClose={() => setShowAddCar(false)}
+        onSuccess={fetchCars}
+      />
     </div>
   );
 }

@@ -17,6 +17,7 @@ import {
   Lock,
   Loader2,
   AlertCircle,
+  CheckCircle2,
 } from "lucide-react";
 
 export default function SignupPage() {
@@ -31,6 +32,7 @@ export default function SignupPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,6 +52,10 @@ export default function SignupPage() {
 
     if (result.error) {
       setError(result.error);
+      setLoading(false);
+    } else {
+      // If we weren't redirected to dashboard, email confirmation is needed
+      setSuccess(true);
       setLoading(false);
     }
   };
@@ -74,6 +80,25 @@ export default function SignupPage() {
           </p>
         </div>
 
+        {/* Email confirmation success */}
+        {success && (
+          <div className="text-center space-y-4 py-4">
+            <div className="h-16 w-16 rounded-full bg-green-500/10 flex items-center justify-center mx-auto">
+              <CheckCircle2 className="h-8 w-8 text-green-500" />
+            </div>
+            <h2 className="text-lg font-semibold">{t("auth.checkEmail")}</h2>
+            <p className="text-sm text-gray-500">
+              {t("auth.confirmationSent", { email })}
+            </p>
+            <Link
+              href="/login"
+              className="text-sky-600 dark:text-sky-400 font-semibold hover:underline text-sm"
+            >
+              {t("auth.backToLogin")}
+            </Link>
+          </div>
+        )}
+
         {/* Error */}
         {error && (
           <div className="flex items-center gap-2 p-3 rounded-xl bg-red-500/10 text-red-600 text-sm mb-4">
@@ -83,96 +108,100 @@ export default function SignupPage() {
         )}
 
         {/* Signup Form */}
-        <form onSubmit={handleSubmit} className="space-y-3">
-          {/* Dealership Name */}
-          <Input
-            label={t("auth.dealershipName")}
-            placeholder={t("auth.dealershipNamePlaceholder")}
-            value={dealershipName}
-            onChange={(e) => setDealershipName(e.target.value)}
-            icon={<Building2 className="h-4 w-4" />}
-            required
-          />
+        {!success && (
+          <form onSubmit={handleSubmit} className="space-y-3">
+            {/* Dealership Name */}
+            <Input
+              label={t("auth.dealershipName")}
+              placeholder={t("auth.dealershipNamePlaceholder")}
+              value={dealershipName}
+              onChange={(e) => setDealershipName(e.target.value)}
+              icon={<Building2 className="h-4 w-4" />}
+              required
+            />
 
-          {/* Dealership Name Arabic (optional) */}
-          <Input
-            label={t("auth.dealershipNameAr")}
-            placeholder={t("auth.dealershipNameArPlaceholder")}
-            value={dealershipNameAr}
-            onChange={(e) => setDealershipNameAr(e.target.value)}
-            dir="rtl"
-          />
+            {/* Dealership Name Arabic (optional) */}
+            <Input
+              label={t("auth.dealershipNameAr")}
+              placeholder={t("auth.dealershipNameArPlaceholder")}
+              value={dealershipNameAr}
+              onChange={(e) => setDealershipNameAr(e.target.value)}
+              dir="rtl"
+            />
 
-          {/* Owner Name */}
-          <Input
-            label={t("auth.ownerName")}
-            placeholder={t("auth.ownerNamePlaceholder")}
-            value={fullName}
-            onChange={(e) => setFullName(e.target.value)}
-            icon={<User className="h-4 w-4" />}
-            required
-          />
+            {/* Owner Name */}
+            <Input
+              label={t("auth.ownerName")}
+              placeholder={t("auth.ownerNamePlaceholder")}
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              icon={<User className="h-4 w-4" />}
+              required
+            />
 
-          {/* Phone */}
-          <Input
-            label={t("auth.phone")}
-            placeholder="+20 10x xxx xxxx"
-            type="tel"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            icon={<Phone className="h-4 w-4" />}
-          />
+            {/* Phone */}
+            <Input
+              label={t("auth.phone")}
+              placeholder="+20 10x xxx xxxx"
+              type="tel"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              icon={<Phone className="h-4 w-4" />}
+            />
 
-          {/* Email */}
-          <Input
-            label={t("auth.email")}
-            placeholder="you@example.com"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            icon={<Mail className="h-4 w-4" />}
-            required
-          />
+            {/* Email */}
+            <Input
+              label={t("auth.email")}
+              placeholder="you@example.com"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              icon={<Mail className="h-4 w-4" />}
+              required
+            />
 
-          {/* Password */}
-          <Input
-            label={t("auth.password")}
-            placeholder={t("auth.passwordPlaceholder")}
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            icon={<Lock className="h-4 w-4" />}
-            required
-            minLength={6}
-          />
+            {/* Password */}
+            <Input
+              label={t("auth.password")}
+              placeholder={t("auth.passwordPlaceholder")}
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              icon={<Lock className="h-4 w-4" />}
+              required
+              minLength={6}
+            />
 
-          <Button
-            variant="primary"
-            size="lg"
-            className="w-full touch-target"
-            type="submit"
-            disabled={loading}
-          >
-            {loading ? (
-              <Loader2 className="h-5 w-5 animate-spin" />
-            ) : (
-              t("auth.createAccount")
-            )}
-          </Button>
-        </form>
+            <Button
+              variant="primary"
+              size="lg"
+              className="w-full touch-target"
+              type="submit"
+              disabled={loading}
+            >
+              {loading ? (
+                <Loader2 className="h-5 w-5 animate-spin" />
+              ) : (
+                t("auth.createAccount")
+              )}
+            </Button>
+          </form>
+        )}
 
         {/* Switch to Login */}
-        <div className="text-center mt-4">
-          <p className="text-sm text-gray-500">
-            {t("auth.haveAccount")}{" "}
-            <Link
-              href="/login"
-              className="text-sky-600 dark:text-sky-400 font-semibold hover:underline"
-            >
-              {t("auth.login")}
-            </Link>
-          </p>
-        </div>
+        {!success && (
+          <div className="text-center mt-4">
+            <p className="text-sm text-gray-500">
+              {t("auth.haveAccount")}{" "}
+              <Link
+                href="/login"
+                className="text-sky-600 dark:text-sky-400 font-semibold hover:underline"
+              >
+                {t("auth.login")}
+              </Link>
+            </p>
+          </div>
+        )}
 
         {/* Terms notice */}
         <div className="flex items-center justify-center gap-2 mt-4">

@@ -8,26 +8,30 @@ import { GlassCard } from "@/components/ui/glass-card";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { Button } from "@/components/ui/button";
 import { BentoGrid, BentoItem } from "@/components/ui/bento-grid";
+import { NewSaleModal } from "@/components/sales/new-sale-modal";
 import type { Sale } from "@/lib/types";
-import { Receipt, Plus, TrendingUp, User } from "lucide-react";
+import { Receipt, Plus, TrendingUp, User, MessageCircle } from "lucide-react";
 
 export default function SalesPage() {
   const { t, i18n } = useTranslation();
   const supabase = createClient();
   const [sales, setSales] = useState<Sale[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showNewSale, setShowNewSale] = useState(false);
+
+  const fetchSales = async () => {
+    const { data } = await supabase
+      .from("sales")
+      .select("*, car:cars(*)")
+      .order("created_at", { ascending: false });
+    setSales((data as Sale[]) || []);
+    setLoading(false);
+  };
 
   useEffect(() => {
-    async function fetchSales() {
-      const { data } = await supabase
-        .from("sales")
-        .select("*, car:cars(*)")
-        .order("created_at", { ascending: false });
-      setSales((data as Sale[]) || []);
-      setLoading(false);
-    }
     fetchSales();
-  }, [supabase]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div className="space-y-6">
@@ -42,7 +46,7 @@ export default function SalesPage() {
             {sales.length} {t("sales.title").toLowerCase()}
           </p>
         </div>
-        <Button variant="primary">
+        <Button variant="primary" onClick={() => setShowNewSale(true)}>
           <Plus className="h-4 w-4 me-2" />
           {t("sales.newSale")}
         </Button>
@@ -139,8 +143,24 @@ export default function SalesPage() {
                     </div>
                   </div>
 
-                  <div className="mt-3 pt-3 border-t border-gray-200/50 dark:border-white/5 text-xs text-gray-400">
-                    {formatDate(sale.sold_at, i18n.language)}
+                  <div className="mt-3 pt-3 border-t border-gray-200/50 dark:border-white/5 flex items-center justify-between">
+                    <span className="text-xs text-gray-400">
+                      {formatDate(sale.sold_at, i18n.language)}
+                    </span>
+                    {sale.buyer_phone && (
+                      <a
+                        href={`https://wa.me/${sale.buyer_phone.replace(/[^0-9]/g, "")}?text=${encodeURIComponent(
+                          `Hi ${sale.buyer_name}, regarding your ${sale.car ? `${sale.car.make} ${sale.car.model}` : "car"} purchase from CarOS Egypt.`,
+                        )}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        className="flex items-center gap-1 text-xs text-emerald-600 hover:text-emerald-700 font-medium"
+                      >
+                        <MessageCircle className="h-3.5 w-3.5" />
+                        WhatsApp
+                      </a>
+                    )}
                   </div>
                 </GlassCard>
               </BentoItem>
@@ -148,6 +168,13 @@ export default function SalesPage() {
           })}
         </BentoGrid>
       )}
+
+      {/* New Sale Modal */}
+      <NewSaleModal
+        open={showNewSale}
+        onClose={() => setShowNewSale(false)}
+        onSuccess={fetchSales}
+      />
     </div>
   );
 }

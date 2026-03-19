@@ -57,7 +57,10 @@
     "ownerName": "اسم المالك",
     "ownerNamePlaceholder": "اسمك الكامل",
     "phone": "رقم الهاتف",
-    "scope": "النطاق"
+    "scope": "النطاق",
+    "checkEmail": "تحقق من بريدك الإلكتروني",
+    "confirmationSent": "أرسلنا رابط تأكيد إلى {{email}}. اضغط على الرابط لتفعيل حسابك.",
+    "backToLogin": "← العودة لتسجيل الدخول"
   },
   "landing": {
     "heroTitle": "نظام التشغيل لمعارض السيارات في مصر",
@@ -204,6 +207,9 @@
     "downPayment": "المقدم",
     "remaining": "المبلغ المتبقي",
     "profit": "الربح",
+    "monthlyInstallment": "القسط الشهري",
+    "numberOfInstallments": "عدد الأقساط",
+    "selectCar": "اختر سيارة للبيع",
     "pending": "قيد الانتظار",
     "completed": "مكتمل",
     "cancelled": "ملغي"

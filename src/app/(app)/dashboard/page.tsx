@@ -22,7 +22,7 @@ import {
 } from "lucide-react";
 
 export default function DashboardPage() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const supabase = createClient();
   const [valuation, setValuation] = useState<DealershipValuation | null>(null);
   const [upcomingPayments, setUpcomingPayments] = useState<
@@ -93,12 +93,15 @@ export default function DashboardPage() {
           {t("dashboard.title")}
         </h1>
         <p className="text-gray-500 dark:text-gray-400 mt-1 text-sm">
-          {new Date().toLocaleDateString("en-EG", {
-            weekday: "long",
-            year: "numeric",
-            month: "long",
-            day: "numeric",
-          })}
+          {new Date().toLocaleDateString(
+            i18n.language === "ar" ? "ar-EG" : "en-EG",
+            {
+              weekday: "long",
+              year: "numeric",
+              month: "long",
+              day: "numeric",
+            },
+          )}
         </p>
       </div>
 

@@ -132,15 +132,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     dealershipNameAr?: string;
     phone?: string;
   }): Promise<{ error: string | null }> => {
-    // 1. Create tenant first (RLS allows authenticated insert, but we need
-    //    the tenant_id before creating the user so the handle_new_user trigger
-    //    can link the profile. We use a two-step approach.)
-    // First, sign up the user with metadata
+    // Generate a URL-safe slug from the dealership name
     const slug = params.dealershipName
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/(^-|-$)/g, "");
 
+    // Pass ALL dealership info in metadata so the DB trigger
+    // atomically creates both tenant + profile in a single transaction.
+    // This avoids the circular dependency between profiles ↔ tenants.
     const { data: authData, error: signUpError } = await supabase.auth.signUp({
       email: params.email,
       password: params.password,
@@ -148,6 +148,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         data: {
           full_name: params.fullName,
           role: "admin",
+          dealership_name: params.dealershipName,
+          dealership_name_ar: params.dealershipNameAr || "",
+          slug: `${slug}-${Date.now().toString(36)}`,
+          phone: params.phone || "",
         },
         emailRedirectTo: `${window.location.origin}/auth/callback`,
       },
@@ -156,36 +160,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (signUpError) return { error: signUpError.message };
     if (!authData.user) return { error: "Signup failed" };
 
-    // 2. Create tenant (the user is now authenticated)
-    const { data: tenantData, error: tenantError } = await supabase
-      .from("tenants")
-      .insert({
-        name: params.dealershipName,
-        name_ar: params.dealershipNameAr || null,
-        slug: `${slug}-${Date.now().toString(36)}`,
-        phone: params.phone || null,
-      })
-      .select()
-      .single();
-
-    if (tenantError) return { error: tenantError.message };
-
-    // 3. Update the auto-created profile to link to this tenant and set as admin
-    const { error: profileError } = await supabase
-      .from("profiles")
-      .update({
-        tenant_id: tenantData.id,
-        role: "admin",
-        full_name: params.fullName,
-        phone: params.phone || null,
-      })
-      .eq("id", authData.user.id);
-
-    if (profileError) return { error: profileError.message };
-
-    // 4. Load user data
-    await loadUserData(authData.user.id);
-    router.push("/dashboard");
+    // If email confirmation is disabled, user is already signed in.
+    // The trigger has already created tenant + profile.
+    if (authData.session) {
+      await loadUserData(authData.user.id);
+      router.push("/dashboard");
+    }
+    // If email confirmation is enabled, user needs to verify email first.
+    // We return success and the UI will show a confirmation message.
     return { error: null };
   };
 

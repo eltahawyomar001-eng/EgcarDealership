@@ -25,6 +25,7 @@ import {
   Camera,
   Receipt,
   X,
+  MessageCircle,
 } from "lucide-react";
 
 export default function InstallmentsPage() {
@@ -332,17 +333,32 @@ export default function InstallmentsPage() {
                     </p>
                   </div>
                   {inst.status !== "paid" && (
-                    <Button
-                      size="sm"
-                      variant="primary"
-                      onClick={() => {
-                        setSelectedInstallment(inst);
-                        setPaymentAmount(String(remaining));
-                        setShowPaymentModal(true);
-                      }}
-                    >
-                      {t("installments.logPayment")}
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      {inst.buyer_phone && (
+                        <a
+                          href={`https://wa.me/${inst.buyer_phone.replace(/[^0-9]/g, "")}?text=${encodeURIComponent(
+                            `Hi ${inst.buyer_name}, this is a reminder regarding installment #${inst.installment_number} for ${inst.car_name}. Amount due: ${inst.amount_due - inst.amount_paid} EGP.`,
+                          )}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="p-2 rounded-xl bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20 transition-colors"
+                          title="WhatsApp"
+                        >
+                          <MessageCircle className="h-4 w-4" />
+                        </a>
+                      )}
+                      <Button
+                        size="sm"
+                        variant="primary"
+                        onClick={() => {
+                          setSelectedInstallment(inst);
+                          setPaymentAmount(String(remaining));
+                          setShowPaymentModal(true);
+                        }}
+                      >
+                        {t("installments.logPayment")}
+                      </Button>
+                    </div>
                   )}
                 </div>
               </GlassCard>

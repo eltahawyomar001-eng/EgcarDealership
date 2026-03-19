@@ -3,16 +3,39 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/components/providers/auth-provider";
+import { createClient } from "@/lib/supabase/client";
 import { GlassCard } from "@/components/ui/glass-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useToast } from "@/components/ui/toast";
 import { localeDirection, localeNames, type Locale } from "@/lib/i18n/config";
-import { Settings as SettingsIcon, Globe, Building2 } from "lucide-react";
+import {
+  Settings as SettingsIcon,
+  Globe,
+  Building2,
+  Loader2,
+} from "lucide-react";
 
 export default function SettingsPage() {
   const { t, i18n } = useTranslation();
   const { tenant } = useAuth();
+  const supabase = createClient();
+  const { toast } = useToast();
   const [currentLang, setCurrentLang] = useState(i18n.language);
+  const [saving, setSaving] = useState(false);
+
+  // Controlled form state
+  const [dealershipName, setDealershipName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [address, setAddress] = useState("");
+
+  useEffect(() => {
+    if (tenant) {
+      setDealershipName(tenant.name || "");
+      setPhone(tenant.phone || "");
+      setAddress(tenant.address || "");
+    }
+  }, [tenant]);
 
   useEffect(() => {
     document.documentElement.dir =
@@ -27,6 +50,27 @@ export default function SettingsPage() {
     },
     [i18n],
   );
+
+  const handleSave = async () => {
+    if (!tenant) return;
+    setSaving(true);
+    try {
+      const { error } = await supabase
+        .from("tenants")
+        .update({
+          name: dealershipName,
+          phone,
+          address,
+        })
+        .eq("id", tenant.id);
+      if (error) throw error;
+      toast(t("app.success"), "success");
+    } catch {
+      toast(t("app.error"), "error");
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <div className="space-y-6 max-w-2xl">
@@ -71,18 +115,30 @@ export default function SettingsPage() {
         <div className="space-y-3">
           <Input
             label={t("settings.dealershipName")}
-            defaultValue={tenant?.name || ""}
+            value={dealershipName}
+            onChange={(e) => setDealershipName(e.target.value)}
           />
           <Input
             label={t("settings.phone")}
-            defaultValue={tenant?.phone || ""}
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
           />
           <Input
             label={t("settings.address")}
-            defaultValue={tenant?.address || ""}
+            value={address}
+            onChange={(e) => setAddress(e.target.value)}
           />
-          <Button variant="primary" className="w-full">
-            {t("app.save")}
+          <Button
+            variant="primary"
+            className="w-full"
+            onClick={handleSave}
+            disabled={saving}
+          >
+            {saving ? (
+              <Loader2 className="h-5 w-5 animate-spin" />
+            ) : (
+              t("app.save")
+            )}
           </Button>
         </div>
       </GlassCard>
